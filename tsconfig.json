@@ -16,6 +16,6 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": ["src/**/*", "./**/*.ts", "./**/*.tsx", "index.ts"],
+  "include": ["src/**/*", "./**/*.ts", "./**/*.tsx", "index.ts", "files"],
   "exclude": ["node_modules", "dist"]
 }
