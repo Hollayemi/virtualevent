@@ -1,16 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema, ZodError } from 'zod';
-import { AppResponse } from './error';
+import Joi, { Schema } from 'joi';
 
 export const validate =
-    (schema: ZodSchema) =>
+    (schema: Schema) =>
     (req: Request, res: Response, next: NextFunction): void => {
-        const result = schema.safeParse(req.body);
+        const { error, value } = schema.validate(req.body, {
+            abortEarly: false,   // collect all errors, not just the first
+            stripUnknown: true,  // remove keys not defined in the schema
+            convert: true,       // coerce types (e.g. "true" → true)
+        });
 
-        if (!result.success) {
-            const errors = (result.error as ZodError).errors.map((e) => ({
-                field: e.path.join('.'),
-                message: e.message,
+        if (error) {
+            const errors = error.details.map((detail: Joi.ValidationErrorItem) => ({
+                field: detail.path.join('.'),
+                message: detail.message.replace(/['"]/g, ''), // strip Joi's surrounding quotes
             }));
 
             res.status(422).json({
@@ -23,6 +26,7 @@ export const validate =
             return;
         }
 
-        req.body = result.data;
+        // Replace body with the coerced value (includes Joi defaults)
+        req.body = value;
         next();
     };

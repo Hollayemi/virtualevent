@@ -14,7 +14,7 @@ export const env = {
     PORT: parseInt(getEnv('PORT', '5000'), 10),
     MONGODB_URI: getEnv('MONGODB_URI', ''),
     MONGODB_URI_PROD: getEnv('MONGODB_URI_PROD', ''),
-    JWT_SECRET: getEnv('JWT_SECRET', 'fallback-secret-change-in-prod'),
+    JWT_SECRET: getEnv('JWT_SECRET', 'fallback-secret-prod'),
     JWT_EXPIRE: getEnv('JWT_EXPIRE', '7d'),
     JWT_COOKIE_EXPIRE: parseInt(getEnv('JWT_COOKIE_EXPIRE', '7'), 10),
     JWT_REFRESH_SECRET: getEnv('JWT_REFRESH_SECRET', 'fallback-refresh-secret'),

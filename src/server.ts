@@ -5,9 +5,11 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
 
 import connectDB from './config/database';
 import { env } from './config/env';
+import { swaggerSpec } from './config/swagger';
 import {
     errorHandler,
     handle404,
@@ -69,6 +71,31 @@ if (env.isDev()) {
 } else {
     app.use(morgan('combined'));
 }
+
+
+
+// Available at: GET /api/docs
+// Raw spec at:  GET /api/docs.json
+ 
+app.get('/api/docs.json', (_req: Request, res: Response) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+});
+
+app.use(
+    '/api/docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+        customSiteTitle: 'GYNSIS API Docs',
+        swaggerOptions: {
+            persistAuthorization: true,  // keeps the JWT filled in across page refreshes
+            displayRequestDuration: true,
+            filter: true,
+            tryItOutEnabled: true,
+        },
+    }),
+);
+
 
 //  Health 
 
