@@ -25,6 +25,12 @@ export const updateMe = asyncHandler(async (req: Request, res: Response) => {
     (res as AppResponse).data({ user }, 'Profile updated');
 });
 
+export const vipProtectionHandler = asyncHandler(async (req: Request, res: Response) => {
+    const user = await userService.vipProtection(req.user!.id, req.body.enabled as boolean);
+    (res as AppResponse).data({ user }, 'Profile updated');
+});
+
+
 export const logout = asyncHandler(async (req: Request, res: Response) => {
     res.cookie('token', '', { expires: new Date(0), httpOnly: true });
     (res as AppResponse).success('Logged out successfully');

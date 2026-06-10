@@ -86,3 +86,19 @@ export const updateUser = async (id: string, input: UpdateUserInput) => {
 
     return user.getPublicProfile();
 };
+
+export const vipProtection = async (id: string, enable: boolean) => {
+    // Deny password changes through this route
+    const user = await User.findByIdAndUpdate(
+        id,
+        { $set: {vipProtectionEnabled: Boolean(enable)} },
+        { new: true, runValidators: true },
+    );
+
+    if (!user) {
+        throw new AppError('User not found', 404, 'NOT_FOUND');
+    }
+
+    return user.getPublicProfile();
+};
+

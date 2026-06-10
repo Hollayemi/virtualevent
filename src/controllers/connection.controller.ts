@@ -29,9 +29,10 @@ export const respondToConnection = asyncHandler(async (req: Request, res: Respon
 });
 
 export const browseAttendeesInTier = asyncHandler(async (req: Request, res: Response) => {
-    const attendees = await connectionService.browseAttendeesInTier(
+    const attendees = await connectionService.browseAttendees(
         req.user!.id,
         req.params.eventId,
+        req.query.inTier === "true",
     );
     (res as AppResponse).data({ attendees }, 'Attendees retrieved');
 });

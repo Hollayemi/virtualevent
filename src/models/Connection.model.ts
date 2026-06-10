@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import { CONNECTION_STATUSES, ConnectionStatus, INTENTION_TAGS, IntentionTag } from '../utils/constants';
 
-//  Interface 
+// ─── Interface ────────────────────────────────────────────────────────────────
 
 export interface IConnection {
     eventId: Types.ObjectId;
@@ -12,22 +12,24 @@ export interface IConnection {
     status: ConnectionStatus;
     intentionTag: IntentionTag;
     message?: string;
+    creditCost: number;        // M2: credits spent to send this request (0 if non-VIP)
+    wasVipGated: boolean;      // M2: true if recipient had VIP protection at request time
     createdAt: Date;
     updatedAt: Date;
 }
 
-//  Document 
+// ─── Document ─────────────────────────────────────────────────────────────────
 
 export interface IConnectionDocument extends IConnection, Document {
     accept(): Promise<IConnectionDocument>;
     decline(): Promise<IConnectionDocument>;
 }
 
-//  Model 
+// ─── Model ────────────────────────────────────────────────────────────────────
 
 export interface IConnectionModel extends Model<IConnectionDocument> {}
 
-//  Schema 
+// ─── Schema ───────────────────────────────────────────────────────────────────
 
 const ConnectionSchema = new Schema<IConnectionDocument, IConnectionModel>(
     {
@@ -68,6 +70,15 @@ const ConnectionSchema = new Schema<IConnectionDocument, IConnectionModel>(
             type: String,
             maxlength: [300, 'Message cannot exceed 300 characters'],
         },
+        creditCost: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        wasVipGated: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,
@@ -76,7 +87,7 @@ const ConnectionSchema = new Schema<IConnectionDocument, IConnectionModel>(
     },
 );
 
-//  Indexes 
+// ─── Indexes ──────────────────────────────────────────────────────────────────
 
 // No duplicate requests between same two users in the same event
 ConnectionSchema.index(
@@ -87,7 +98,7 @@ ConnectionSchema.index({ eventId: 1, requesterId: 1 });
 ConnectionSchema.index({ eventId: 1, recipientId: 1 });
 ConnectionSchema.index({ eventId: 1, status: 1 });
 
-//  Pre-save: cannot connect to yourself 
+// ─── Pre-save: cannot connect to yourself ─────────────────────────────────────
 
 ConnectionSchema.pre('save', function (next) {
     if (this.requesterId.toString() === this.recipientId.toString()) {
@@ -96,7 +107,7 @@ ConnectionSchema.pre('save', function (next) {
     next();
 });
 
-//  Instance Methods 
+// ─── Instance Methods ─────────────────────────────────────────────────────────
 
 ConnectionSchema.methods.accept = async function (): Promise<IConnectionDocument> {
     this.status = 'accepted';
@@ -108,7 +119,7 @@ ConnectionSchema.methods.decline = async function (): Promise<IConnectionDocumen
     return this.save();
 };
 
-//  Model 
+// ─── Model ────────────────────────────────────────────────────────────────────
 
 const Connection = mongoose.model<IConnectionDocument, IConnectionModel>(
     'Connection',

@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import { REGISTRATION_STATUSES, RegistrationStatus } from '../utils/constants';
 
-//  Interface 
+// ─── Interface ────────────────────────────────────────────────────────────────
 
 export interface IRegistration {
     userId: Types.ObjectId;
@@ -11,24 +11,25 @@ export interface IRegistration {
     tierPrice: number;                                    // snapshot at registration time
     status: RegistrationStatus;
     customFieldValues: Record<string, string | boolean | number>;
+    referredBy?: Types.ObjectId;                          // M2: userId of referrer if any
     registeredAt: Date;
     confirmedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
 
-//  Document 
+// ─── Document ─────────────────────────────────────────────────────────────────
 
 export interface IRegistrationDocument extends IRegistration, Document {
     confirm(): Promise<IRegistrationDocument>;
     cancel(): Promise<IRegistrationDocument>;
 }
 
-//  Model 
+// ─── Model ────────────────────────────────────────────────────────────────────
 
 export interface IRegistrationModel extends Model<IRegistrationDocument> {}
 
-//  Schema 
+// ─── Schema ───────────────────────────────────────────────────────────────────
 
 const RegistrationSchema = new Schema<IRegistrationDocument, IRegistrationModel>(
     {
@@ -71,6 +72,11 @@ const RegistrationSchema = new Schema<IRegistrationDocument, IRegistrationModel>
         confirmedAt: {
             type: Date,
         },
+        referredBy: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            default: null,
+        },
     },
     {
         timestamps: true,
@@ -79,7 +85,7 @@ const RegistrationSchema = new Schema<IRegistrationDocument, IRegistrationModel>
     },
 );
 
-//  Indexes 
+// ─── Indexes ──────────────────────────────────────────────────────────────────
 
 // One registration per user per event — enforced at DB level
 RegistrationSchema.index({ userId: 1, eventId: 1 }, { unique: true });
@@ -87,7 +93,7 @@ RegistrationSchema.index({ eventId: 1, tierId: 1 });
 RegistrationSchema.index({ eventId: 1, status: 1 });
 RegistrationSchema.index({ userId: 1, status: 1 });
 
-//  Instance Methods 
+// ─── Instance Methods ─────────────────────────────────────────────────────────
 
 RegistrationSchema.methods.confirm = async function (): Promise<IRegistrationDocument> {
     this.status = 'confirmed';
@@ -100,7 +106,7 @@ RegistrationSchema.methods.cancel = async function (): Promise<IRegistrationDocu
     return this.save();
 };
 
-//  Model 
+// ─── Model ────────────────────────────────────────────────────────────────────
 
 const Registration = mongoose.model<IRegistrationDocument, IRegistrationModel>(
     'Registration',

@@ -5,15 +5,13 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
-import swaggerUi from 'swagger-ui-express';
 
 import connectDB from './config/database';
 import { env } from './config/env';
-import { swaggerSpec } from './config/swagger';
 import {
     errorHandler,
     handle404,
-    // jsonParseErrorHandler,
+    jsonParseErrorHandler,
     extendResponse,
     AppResponse,
 } from './middleware/error';
@@ -24,10 +22,7 @@ import organiserRoutes from './routes/organiser.routes';
 import eventRoutes from './routes/event.routes';
 import connectionRoutes from './routes/connection.routes';
 import registrationRoutes from './routes/registration.routes';
-import walletRoutes from './routes/wallet.routes';
-import creditPackageRoutes from './routes/creditPackage.routes';
-import creditConfigRoutes from './routes/creditConfig.routes';
-
+// M2
 
 dotenv.config();
 
@@ -35,7 +30,7 @@ connectDB();
 
 const app = express();
 
-//  Security 
+// ─── Security ─────────────────────────────────────────────────────────────────
 
 app.use(helmet());
 
@@ -49,7 +44,7 @@ const limiter = rateLimit({
 
 app.use('/api/', limiter);
 
-//  CORS 
+// ─── CORS ─────────────────────────────────────────────────────────────────────
 
 app.use(
     cors({
@@ -58,17 +53,18 @@ app.use(
     }),
 );
 
+// ─── Parsers ──────────────────────────────────────────────────────────────────
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
-// app.use(jsonParseErrorHandler);
+app.use(jsonParseErrorHandler);
 
-//  Response helpers 
+// ─── Response helpers ─────────────────────────────────────────────────────────
 
 app.use(extendResponse);
 
-//  Logging 
+// ─── Logging ──────────────────────────────────────────────────────────────────
 
 if (env.isDev()) {
     app.use(morgan('dev'));
@@ -76,30 +72,7 @@ if (env.isDev()) {
     app.use(morgan('combined'));
 }
 
-
-
-// Available at: GET /api/docs
-// Raw spec at:  GET /api/docs.json
- 
-app.get('/api/docs.json', (_req: Request, res: Response) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(swaggerSpec);
-});
-
-app.use(
-    '/api/docs',
-    swaggerUi.serve,
-    swaggerUi.setup(swaggerSpec, {
-        customSiteTitle: 'GYNSIS API Docs',
-        swaggerOptions: {
-            persistAuthorization: true,
-            displayRequestDuration: true,
-            filter: true,
-            tryItOutEnabled: true,
-        },
-    }),
-);
-
+// ─── Health ───────────────────────────────────────────────────────────────────
 
 app.get('/health', (req: Request, res: Response) => {
     (res as AppResponse).data(
@@ -113,30 +86,30 @@ app.get('/health', (req: Request, res: Response) => {
     );
 });
 
-//  API Routes 
+// ─── API Routes ───────────────────────────────────────────────────────────────
 
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/organisers', organiserRoutes);
 app.use('/api/v1/events', eventRoutes);
 app.use('/api/v1/connections', connectionRoutes);
 app.use('/api/v1/registrations', registrationRoutes);
-app.use('/api/v1/wallet', walletRoutes);
-app.use('/api/v1/credit-packages', creditPackageRoutes);
-app.use('/api/v1/credit-config', creditConfigRoutes);
-//  Error handling 
+// M2
+
+
+// ─── Error handling ───────────────────────────────────────────────────────────
 
 app.use('*', handle404);
 app.use(errorHandler);
 
-//  Start 
+// ─── Start ────────────────────────────────────────────────────────────────────
 
 const server = app.listen(env.PORT, () => {
     console.log(`
-  ┌┐
+  ┌─────────────────────────────────────────┐
   │     Event Networking Platform           │
   │     Environment : ${env.NODE_ENV.padEnd(20)}│
   │     Port        : ${String(env.PORT).padEnd(20)}│
-  └┘
+  └─────────────────────────────────────────┘
     `);
 });
 

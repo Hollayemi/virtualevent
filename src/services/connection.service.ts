@@ -3,6 +3,7 @@ import Registration from '../models/Registration.model';
 import { AppError } from '../middleware/error';
 import { IntentionTag } from '../utils/constants';
 import mongoose from 'mongoose';
+import * as walletService from '../services/wallet.service';
 
 interface SendConnectionInput {
     requesterId: string;
@@ -19,7 +20,6 @@ export const sendConnectionRequest = async (input: SendConnectionInput) => {
         throw new AppError('You cannot send a connection request to yourself', 400);
     }
 
-    // Fetch both registrations in a single query
     const [requesterReg, recipientReg] = await Promise.all([
         Registration.findOne({ userId: requesterId, eventId, status: 'confirmed' }),
         Registration.findOne({ userId: recipientId, eventId, status: 'confirmed' }),
@@ -33,15 +33,7 @@ export const sendConnectionRequest = async (input: SendConnectionInput) => {
         throw new AppError('This attendee is not a confirmed participant of the event', 400);
     }
 
-    // Tier gate: both must share the same tierId
-    if (requesterReg.tierId !== recipientReg.tierId) {
-        throw new AppError(
-            'You can only connect with attendees in your tier',
-            403,
-            'FORBIDDEN',
-        );
-    }
-
+    
     // Duplicate guard (also enforced by DB unique index, but gives a friendly message)
     const existingConnection = await Connection.findOne({
         eventId,
@@ -58,6 +50,31 @@ export const sendConnectionRequest = async (input: SendConnectionInput) => {
             'CONFLICT',
         );
     }
+
+    // Tier gate: both must share the same tierId for free, if higher, deduct from wallet
+    if (requesterReg.tierPrice < recipientReg.tierPrice) {
+        const requesterBalance = (await walletService.getOrCreateWallet(requesterId)).balance
+
+        if (requesterBalance < recipientReg.tierPrice) {
+            throw new AppError(
+                'Insufficient Balance to send connection request',
+                403,
+                'FORBIDDEN',
+            );
+
+        }
+
+        await walletService.debitWallet(
+            requesterId,
+            recipientReg.tierPrice,
+            {
+                type: "spend",
+                "description": "",
+                "referenceId" : "",
+            }
+        )
+    }
+
 
     const connection = await Connection.create({
         eventId,
@@ -129,7 +146,7 @@ export const getEventConnections = async (userId: string, eventId: string) => {
     return connections;
 };
 
-export const browseAttendeesInTier = async (userId: string, eventId: string) => {
+export const browseAttendees = async (userId: string, eventId: string, inTier: boolean) => {
     // Find the requesting user's confirmed registration to get their tierId
     const myReg = await Registration.findOne({ userId, eventId, status: 'confirmed' });
 
@@ -140,7 +157,7 @@ export const browseAttendeesInTier = async (userId: string, eventId: string) => 
     // Find all confirmed registrations in the same tier, excluding self
     const registrations = await Registration.find({
         eventId,
-        tierId: myReg.tierId,
+        ...(inTier ? { tierId: myReg.tierId } : {}),
         status: 'confirmed',
         userId: { $ne: new mongoose.Types.ObjectId(userId) },
     })
@@ -178,3 +195,4 @@ export const browseAttendeesInTier = async (userId: string, eventId: string) => 
 
     return attendees;
 };
+

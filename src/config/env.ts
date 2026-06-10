@@ -9,6 +9,7 @@ const getEnv = (key: string, fallback?: string): string => {
     return value;
 };
 
+
 export const env = {
     NODE_ENV: getEnv('NODE_ENV', 'development'),
     PORT: parseInt(getEnv('PORT', '5000'), 10),
@@ -23,3 +24,4 @@ export const env = {
     isDev: () => process.env.NODE_ENV === 'development',
     isProd: () => process.env.NODE_ENV === 'production',
 };
+

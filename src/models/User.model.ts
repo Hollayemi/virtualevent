@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { comparePassword } from '../utils/hash';
 
-//  Interface 
+// ─── Interface ────────────────────────────────────────────────────────────────
 
 export interface IUser {
     name: string;
@@ -16,25 +16,26 @@ export interface IUser {
     networkingGoals?: string;
     avatarUrl?: string;
     isVerified: boolean;
+    vipProtectionEnabled: boolean;   // M2: when true, lower-tier users must spend credits to connect
     accountType: 'user';
     createdAt: Date;
     updatedAt: Date;
 }
 
-//  Document (instance methods) 
+// ─── Document (instance methods) ──────────────────────────────────────────────
 
 export interface IUserDocument extends IUser, Document {
     comparePassword(plain: string): Promise<boolean>;
     getPublicProfile(): Omit<IUser, 'passwordHash'>;
 }
 
-//  Model (static methods) 
+// ─── Model (static methods) ───────────────────────────────────────────────────
 
 export interface IUserModel extends Model<IUserDocument> {
     findByEmail(email: string): Promise<IUserDocument | null>;
 }
 
-//  Schema 
+// ─── Schema ───────────────────────────────────────────────────────────────────
 
 const UserSchema = new Schema<IUserDocument, IUserModel>(
     {
@@ -66,6 +67,7 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
         networkingGoals: { type: String, maxlength: [300, 'Networking goals cannot exceed 300 characters'] },
         avatarUrl: { type: String },
         isVerified: { type: Boolean, default: false },
+        vipProtectionEnabled: { type: Boolean, default: false },
         accountType: { type: String, enum: ['user'], default: 'user' },
     },
     {
@@ -75,13 +77,13 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
     },
 );
 
-//  Indexes 
+// ─── Indexes ──────────────────────────────────────────────────────────────────
 
 UserSchema.index({ email: 1 });
 UserSchema.index({ industry: 1 });
 UserSchema.index({ company: 1 });
 
-//  Instance Methods 
+// ─── Instance Methods ─────────────────────────────────────────────────────────
 
 UserSchema.methods.comparePassword = async function (plain: string): Promise<boolean> {
     return comparePassword(plain, this.passwordHash);
@@ -93,14 +95,14 @@ UserSchema.methods.getPublicProfile = function (): Omit<IUser, 'passwordHash'> {
     return obj;
 };
 
-//  Static Methods 
+// ─── Static Methods ───────────────────────────────────────────────────────────
 
 UserSchema.statics.findByEmail = function (email: string): Promise<IUserDocument | null> {
     // +passwordHash needed for auth comparisons
     return this.findOne({ email: email.toLowerCase() }).select('+passwordHash');
 };
 
-//  Model 
+// ─── Model ────────────────────────────────────────────────────────────────────
 
 const User = mongoose.model<IUserDocument, IUserModel>('User', UserSchema);
 
