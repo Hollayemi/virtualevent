@@ -16,6 +16,10 @@ export const registerUserSchema = Joi.object({
         'string.min': 'Password must be at least 8 characters',
         'any.required': 'Password is required',
     }),
+    accountType: Joi.string().valid('attendee', 'organiser').required().messages({
+        'any.required': 'Account type is required',
+        'any.only': 'Account type must be either attendee or organiser',
+    }),
     phone: Joi.string().optional().allow(''),
     bio: Joi.string().max(500).optional().allow(''),
     role: Joi.string().max(100).optional().allow(''),
@@ -23,8 +27,21 @@ export const registerUserSchema = Joi.object({
     industry: Joi.string().max(100).optional().allow(''),
     interests: Joi.array().items(Joi.string()).optional(),
     networkingGoals: Joi.string().max(300).optional().allow(''),
-});
 
+    // Organiser-specific fields (only required if accountType is 'organiser')
+    organisationName: Joi.string().min(1).max(150).when('accountType', {
+        is: 'organiser',
+        then: Joi.required().messages({
+            'string.empty': 'Organisation name is required',
+            'any.required': 'Organisation name is required',
+        }),
+        otherwise: Joi.optional().allow('')
+    }),
+    organisationDescription: Joi.string().max(600).optional().allow(''),
+    website: Joi.string().uri().optional().allow('').messages({
+        'string.uri': 'Invalid website URL',
+    }),
+});
 export const loginSchema = Joi.object({
     email: Joi.string().email({ tlds: { allow: false } }).required().messages({
         'string.email': 'Invalid email address',
@@ -65,15 +82,7 @@ export const registerOrganiserSchema = Joi.object({
         'string.min': 'Password must be at least 8 characters',
         'any.required': 'Password is required',
     }),
-    organisationName: Joi.string().min(1).max(150).required().messages({
-        'string.empty': 'Organisation name is required',
-        'any.required': 'Organisation name is required',
-    }),
-    organisationDescription: Joi.string().max(600).optional().allow(''),
-    website: Joi.string().uri().optional().messages({
-        'string.uri': 'Invalid website URL',
-    }),
-    phone: Joi.string().optional().allow(''),
+   
 });
 
 export const updateOrganiserSchema = Joi.object({

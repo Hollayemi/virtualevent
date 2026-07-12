@@ -16,8 +16,9 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
+    console.log('req.user', req.user);
     const user = await userService.getUserById(req.user!.id);
-    (res as AppResponse).data({ user }, 'Profile retrieved');
+    (res as AppResponse).data(user, 'Profile retrieved');
 });
 
 export const updateMe = asyncHandler(async (req: Request, res: Response) => {

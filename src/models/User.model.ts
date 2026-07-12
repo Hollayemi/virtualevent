@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { comparePassword } from '../utils/hash';
+import { Types } from 'mongoose';
 
 // ─── Interface ────────────────────────────────────────────────────────────────
 
@@ -9,15 +10,12 @@ export interface IUser {
     passwordHash: string;
     phone?: string;
     bio?: string;
-    role?: string;           // professional role / job title
-    company?: string;
-    industry?: string;
-    interests?: string[];
-    networkingGoals?: string;
     avatarUrl?: string;
     isVerified: boolean;
+    attendeeProfile: Types.ObjectId;  // Reference to Attendee profile
+    organiserProfile: Types.ObjectId; // Reference to Organiser profile
     vipProtectionEnabled: boolean;   // M2: when true, lower-tier users must spend credits to connect
-    accountType: 'user';
+    accountType: 'attendee' | 'organiser';
     createdAt: Date;
     updatedAt: Date;
 }
@@ -45,6 +43,14 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
             trim: true,
             maxlength: [100, 'Name cannot exceed 100 characters'],
         },
+        attendeeProfile: {
+            type: Schema.Types.ObjectId,
+            ref: "Attendee"
+        },
+        organiserProfile: {
+            type: Schema.Types.ObjectId,
+            ref: "Organiser"
+        },
         email: {
             type: String,
             required: [true, 'Email is required'],
@@ -60,15 +66,8 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
         },
         phone: { type: String, trim: true },
         bio: { type: String, maxlength: [500, 'Bio cannot exceed 500 characters'] },
-        role: { type: String, trim: true },
-        company: { type: String, trim: true },
-        industry: { type: String, trim: true },
-        interests: [{ type: String, trim: true }],
-        networkingGoals: { type: String, maxlength: [300, 'Networking goals cannot exceed 300 characters'] },
         avatarUrl: { type: String },
-        isVerified: { type: Boolean, default: false },
-        vipProtectionEnabled: { type: Boolean, default: false },
-        accountType: { type: String, enum: ['user'], default: 'user' },
+        accountType: { type: String, enum: ['attendee', 'organiser'], default: 'attendee' },
     },
     {
         timestamps: true,
@@ -77,13 +76,10 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
     },
 );
 
-// ─── Indexes ──────────────────────────────────────────────────────────────────
 
 UserSchema.index({ email: 1 });
 UserSchema.index({ industry: 1 });
 UserSchema.index({ company: 1 });
-
-// ─── Instance Methods ─────────────────────────────────────────────────────────
 
 UserSchema.methods.comparePassword = async function (plain: string): Promise<boolean> {
     return comparePassword(plain, this.passwordHash);
@@ -95,14 +91,11 @@ UserSchema.methods.getPublicProfile = function (): Omit<IUser, 'passwordHash'> {
     return obj;
 };
 
-// ─── Static Methods ───────────────────────────────────────────────────────────
 
 UserSchema.statics.findByEmail = function (email: string): Promise<IUserDocument | null> {
-    // +passwordHash needed for auth comparisons
     return this.findOne({ email: email.toLowerCase() }).select('+passwordHash');
 };
 
-// ─── Model ────────────────────────────────────────────────────────────────────
 
 const User = mongoose.model<IUserDocument, IUserModel>('User', UserSchema);
 

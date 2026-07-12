@@ -14,10 +14,6 @@ import {
 
 const router = Router();
 
-// Public
-router.post('/register', validate(registerOrganiserSchema), organiserController.registerOrganiser);
-router.post('/login', validate(loginSchema), organiserController.loginOrganiser);
-
 // Protected — organiser only
 router.use(protect, requireAccountType('organiser'));
 

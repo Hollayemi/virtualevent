@@ -1,12 +1,8 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { comparePassword } from '../utils/hash';
 
-//  Interface 
-
 export interface IOrganiser {
-    name: string;
-    email: string;
-    passwordHash: string;
+   userId: string;
     organisationName: string;
     organisationDescription?: string;
     logoUrl?: string;
@@ -35,25 +31,7 @@ export interface IOrganiserModel extends Model<IOrganiserDocument> {
 
 const OrganiserSchema = new Schema<IOrganiserDocument, IOrganiserModel>(
     {
-        name: {
-            type: String,
-            required: [true, 'Name is required'],
-            trim: true,
-            maxlength: [100, 'Name cannot exceed 100 characters'],
-        },
-        email: {
-            type: String,
-            required: [true, 'Email is required'],
-            unique: true,
-            lowercase: true,
-            trim: true,
-            match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email'],
-        },
-        passwordHash: {
-            type: String,
-            required: [true, 'Password is required'],
-            select: false,
-        },
+        userId: { type: String, ref: "User", required: true, unique: true },
         organisationName: {
             type: String,
             required: [true, 'Organisation name is required'],
