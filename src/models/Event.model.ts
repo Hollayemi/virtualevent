@@ -42,6 +42,7 @@ export interface IEventLocation {
 export interface IEvent {
     organiserId: Types.ObjectId;
     name: string;
+    slug: string;
     description: string;
     startDate: Date;
     endDate: Date;
@@ -142,6 +143,13 @@ const EventSchema = new Schema<IEventDocument, IEventModel>(
             trim: true,
             maxlength: [150, 'Event name cannot exceed 150 characters'],
         },
+        slug: {
+            type: String,
+            unique: true,
+            lowercase: true,
+            trim: true,
+            index: true,
+        },
         description: {
             type: String,
             required: [true, 'Event description is required'],
@@ -191,8 +199,30 @@ EventSchema.index({ 'tiers.price': 1 });
 
 //  Pre-save: Mark highest tier as VIP & validate price uniqueness 
 
-EventSchema.pre('save', function (next) {
+EventSchema.pre('save', async function (next) {
     const event = this as IEventDocument;
+
+    // Generate a URL-safe slug from the name the first time it's set,
+    // or whenever the name changes. Falls back to appending a short suffix
+    // on collision instead of failing the unique index.
+    if (event.isModified('name') || !event.slug) {
+        const base = event.name
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+
+        let candidate = base || 'event';
+        let suffix = 0;
+        const EventModel = event.constructor as IEventModel;
+        while (
+            await EventModel.findOne({ slug: candidate, _id: { $ne: event._id } }).lean()
+        ) {
+            suffix += 1;
+            candidate = `${base}-${suffix}`;
+        }
+        event.slug = candidate;
+    }
 
     if (!event.isModified('tiers')) return next();
 

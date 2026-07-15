@@ -1,6 +1,7 @@
 import Event, { IEventDocument, ITier, ICustomField } from '../models/Event.model';
 import { AppError } from '../middleware/error';
 import { IEventLocation } from '../models/Event.model';
+import Registration from '../models/Registration.model';
 
 interface CreateEventInput {
     name: string;
@@ -100,7 +101,7 @@ export const getEvents = async (query: GetEventsQuery) => {
     ]);
 
     return {
-        events,
+        data: events,
         pagination: {
             total,
             page,
@@ -111,7 +112,7 @@ export const getEvents = async (query: GetEventsQuery) => {
 };
 
 export const getEventById = async (eventId: string) => {
-    const event = await Event.findById(eventId).populate(
+    const event = await Event.find({ slug: eventId }).populate(
         'organiserId',
         'name organisationName logoUrl website',
     );
@@ -120,7 +121,7 @@ export const getEventById = async (eventId: string) => {
         throw new AppError('Event not found', 404, 'NOT_FOUND');
     }
 
-    return event;
+    return event[0] ?? {};
 };
 
 export const updateEvent = async (
@@ -162,7 +163,7 @@ export const updateEvent = async (
 };
 
 export const publishEvent = async (organiserId: string, eventId: string) => {
-    const event = await Event.findById(eventId);
+    const event = await Event.findOne({ slug: eventId });
 
     if (!event) {
         throw new AppError('Event not found', 404, 'NOT_FOUND');
@@ -193,3 +194,122 @@ export const getOrganiserEvents = async (organiserId: string) => {
 
     return events;
 };
+
+export const getEventAttendeesHandler = async (
+    eventSlug: any,
+    { tier, search, page = 1, pageSize = 50 }: {
+        tier?: string;
+        search?: string;
+        page?: number;
+        pageSize?: number;
+    }
+) => {
+    const event = await Event.findOne({ slug: eventSlug });
+    if (!event) {
+        throw new AppError('Event not found', 404, 'NOT_FOUND');
+    }
+
+    // Build query
+    let query: any = { eventId: event._id };
+
+    // if (tier && tier !== 'All tiers') {
+    //     query.tierLabel = tier;
+    // }
+
+    // Get all attendees with filters applied
+    let attendees = await Registration.find(query).populate('userId');
+
+    // Apply search filter if provided
+    if (search && search.trim()) {
+        const searchTerm = search.trim().toLowerCase();
+        attendees = attendees.filter(attendee => {
+            const user = attendee.userId as any;
+            if (!user) return false;
+            return user.name?.toLowerCase().includes(searchTerm) ||
+                user.email?.toLowerCase().includes(searchTerm) ||
+                user.bio?.toLowerCase().includes(searchTerm);
+        });
+    }
+
+    // Calculate pagination
+    const totalItems = attendees.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const skip = (page - 1) * pageSize;
+
+    const paginatedAttendees = attendees.slice(skip, skip + pageSize);
+
+    return {
+        data: paginatedAttendees,
+
+        page,
+        pageSize: pageSize,
+        total: totalItems,
+        totalPages: totalPages
+
+    };
+}
+
+
+export const getAllEventsAttendeesHandler = async (
+    organiserId: string,
+    { tier, search, page = 1, pageSize = 50 }: {
+        tier?: string;
+        search?: string;
+        page?: number;
+        pageSize?: number;
+    }
+) => {
+
+    const events = await Event.find({ organiserId });
+
+    if (!events || events.length === 0) {
+        return {
+            data: [],
+
+            page,
+            pageSize: pageSize,
+            total: 0,
+            totalPages: 0
+
+        };
+    }
+
+    const eventIds = events.map(event => event._id);
+    let query: any = {
+        eventId: { $in: eventIds }
+    };
+
+    if (tier && tier !== 'All tiers') {
+        query.tierLabel = tier;
+    }
+
+    let filteredAttendees = await Registration.find(query).populate('userId');
+
+    if (search && search.trim()) {
+        const searchTerm = search.trim().toLowerCase();
+        filteredAttendees = filteredAttendees.filter(attendee => {
+            const user = attendee.userId as any;
+            if (!user) return false;
+            return user.name?.toLowerCase().includes(searchTerm) ||
+                user.email?.toLowerCase().includes(searchTerm) ||
+                user.bio?.toLowerCase().includes(searchTerm);
+        });
+    }
+
+    // Calculate pagination
+    const totalItems = filteredAttendees.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const skip = (page - 1) * pageSize;
+
+    const paginatedAttendees = filteredAttendees.slice(skip, skip + pageSize);
+
+    return {
+        data: paginatedAttendees,
+
+        page,
+        pageSize: pageSize,
+        total: totalItems,
+        totalPages: totalPages
+
+    };
+}

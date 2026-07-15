@@ -124,3 +124,41 @@ export const purchaseCallback = asyncHandler(async (req: Request, res: Response)
 
     (res as AppResponse).success('Webhook processed');
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// wallet.slice.ts — new flat wallet API surface
+// ══════════════════════════════════════════════════════════════════════════
+
+export const getWalletBalance = asyncHandler(async (req: Request, res: Response) => {
+    const balance = await walletService.getWalletBalance(req.user!.id, req.query.eventId as string | undefined);
+    (res as AppResponse).data(balance, 'Wallet balance retrieved');
+});
+
+export const listTransactions = asyncHandler(async (req: Request, res: Response) => {
+    const { eventId, kind, source, startDate, endDate, page, pageSize } = req.query;
+    const result = await walletService.listTransactions(req.user!.id, {
+        eventId: eventId as string | undefined,
+        kind: kind as any,
+        source: source as any,
+        startDate: startDate as string | undefined,
+        endDate: endDate as string | undefined,
+        page: page ? parseInt(page as string, 10) : undefined,
+        pageSize: pageSize ? parseInt(pageSize as string, 10) : undefined,
+    });
+    (res as AppResponse).data(result, 'Transactions retrieved');
+});
+
+export const getWalletCreditPackages = asyncHandler(async (req: Request, res: Response) => {
+    const packages = await walletService.getWalletCreditPackages();
+    (res as AppResponse).data(packages, 'Credit packages retrieved');
+});
+
+export const purchaseCredits = asyncHandler(async (req: Request, res: Response) => {
+    const result = await walletService.purchaseCredits(req.user!.id, req.body);
+    (res as AppResponse).data(result, 'Credits purchased');
+});
+
+export const getPendingCashback = asyncHandler(async (req: Request, res: Response) => {
+    const result = await walletService.getPendingCashback(req.user!.id, req.query.eventId as string | undefined);
+    (res as AppResponse).data(result, 'Pending cashback retrieved');
+});

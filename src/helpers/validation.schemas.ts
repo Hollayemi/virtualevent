@@ -259,6 +259,66 @@ export const registerForEventSchema = Joi.object({
         .optional(),
 });
 
+// ─── Profile (profile.slice.ts) ────────────────────────────────────────────────
+
+export const updateProfileSchema = Joi.object({
+    name: Joi.string().min(1).max(100).optional(),
+    email: Joi.string().email({ tlds: { allow: false } }).optional(),
+    phone: Joi.string().optional().allow(''),
+    bio: Joi.string().max(500).optional().allow(''),
+    role: Joi.string().max(100).optional().allow(''),
+    company: Joi.string().max(100).optional().allow(''),
+    industry: Joi.string().max(100).optional().allow(''),
+    interests: Joi.array().items(Joi.string()).optional(),
+    networkingGoals: Joi.string().max(300).optional().allow(''),
+    avatarUrl: Joi.string().uri().optional().allow(''),
+});
+
+// ─── Settings (settings.slice.ts) ──────────────────────────────────────────────
+
+export const updateAccountSchema = Joi.object({
+    name: Joi.string().min(1).max(100).optional(),
+    email: Joi.string().email({ tlds: { allow: false } }).optional(),
+    phone: Joi.string().optional().allow(''),
+    currentPassword: Joi.string().optional(),
+    newPassword: Joi.string().min(8).optional().messages({
+        'string.min': 'New password must be at least 8 characters',
+    }),
+})
+    .with('newPassword', 'currentPassword')
+    .with('email', 'currentPassword');
+
+export const updateNotificationsSchema = Joi.object({
+    connectionRequests: Joi.boolean().optional(),
+    messages: Joi.boolean().optional(),
+    meetingReminders: Joi.boolean().optional(),
+    marketingEmails: Joi.boolean().optional(),
+    eventUpdates: Joi.boolean().optional(),
+    systemAlerts: Joi.boolean().optional(),
+}).min(1);
+
+export const enableOrganizerRoleSchema = Joi.object({
+    organisationName: Joi.string().min(1).max(150).required().messages({
+        'string.empty': 'Organisation name is required',
+        'any.required': 'Organisation name is required',
+    }),
+    eventName: Joi.string().max(150).optional().allow(''),
+});
+
+export const switchActiveRoleSchema = Joi.object({
+    role: Joi.string().valid('attendee', 'organizer').required().messages({
+        'any.only': 'role must be "attendee" or "organizer"',
+        'any.required': 'role is required',
+    }),
+});
+
+export const deleteAccountSchema = Joi.object({
+    confirm: Joi.string().required().messages({
+        'any.required': 'Type DELETE to confirm account deletion',
+    }),
+    currentPassword: Joi.string().optional(),
+});
+
 // ─── Connection ───────────────────────────────────────────────────────────────
 
 export const sendConnectionSchema = Joi.object({
@@ -272,6 +332,48 @@ export const sendConnectionSchema = Joi.object({
         .messages({
             'any.only': `Intention tag must be one of: ${INTENTION_TAGS.join(', ')}`,
             'any.required': 'Intention tag is required',
+        }),
+    message: Joi.string().max(300).optional().allow('').messages({
+        'string.max': 'Message cannot exceed 300 characters',
+    }),
+});
+
+// connection.slice.ts ConnectionRequest — flat POST /connections/request body
+// { userId, eventId, intent, message }, distinct from the legacy
+// event-nested sendConnectionSchema above.
+export const flatConnectionRequestSchema = Joi.object({
+    userId: Joi.string().min(1).required().messages({
+        'string.empty': 'userId is required',
+        'any.required': 'userId is required',
+    }),
+    eventId: Joi.string().min(1).required().messages({
+        'string.empty': 'eventId is required',
+        'any.required': 'eventId is required',
+    }),
+    intent: Joi.string()
+        .valid(...INTENTION_TAGS)
+        .required()
+        .messages({
+            'any.only': `intent must be one of: ${INTENTION_TAGS.join(', ')}`,
+            'any.required': 'intent is required',
+        }),
+    message: Joi.string().max(300).optional().allow('').messages({
+        'string.max': 'Message cannot exceed 300 characters',
+    }),
+});
+
+// discover.slice.ts connectFromDiscover — POST /discover/attendees/:userId/connect body
+export const discoverConnectSchema = Joi.object({
+    eventId: Joi.string().min(1).required().messages({
+        'string.empty': 'eventId is required',
+        'any.required': 'eventId is required',
+    }),
+    intent: Joi.string()
+        .valid(...INTENTION_TAGS)
+        .required()
+        .messages({
+            'any.only': `intent must be one of: ${INTENTION_TAGS.join(', ')}`,
+            'any.required': 'intent is required',
         }),
     message: Joi.string().max(300).optional().allow('').messages({
         'string.max': 'Message cannot exceed 300 characters',

@@ -1,27 +1,27 @@
 import { Router } from 'express';
-import * as organiserController from '../controllers/organiser.controller';
 import * as eventController from '../controllers/event.controller';
-import * as registrationController from '../controllers/registration.controller';
 import { protect, requireAccountType } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import {
-    registerOrganiserSchema,
-    loginSchema,
-    updateOrganiserSchema,
     createEventSchema,
     updateEventSchema,
 } from '../helpers/validation.schemas';
 
 const router = Router();
 
-// Protected — organiser only
-router.use(protect, requireAccountType('organiser'));
-
-router.get('/me', organiserController.getMe);
-router.patch('/me', validate(updateOrganiserSchema), organiserController.updateMe);
-router.post('/logout', organiserController.logout);
+router.use(protect, requireAccountType('user'));
 
 // Organiser's own events
-router.get('/me/events', eventController.getMyEvents);
+router.get('/events/', eventController.getMyEvents);
+router.get('/events/attendees', eventController.getEventAttendees);
+router.get('/events/:eventId', eventController.getEventById);
+
+
+router.post('/events/', validate(createEventSchema), eventController.createEvent,);
+
+router.patch('/events/:eventId', validate(updateEventSchema), eventController.updateEvent,);
+
+router.patch('/events/:eventId/publish', eventController.publishEvent,);
+
 
 export default router;

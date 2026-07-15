@@ -23,6 +23,7 @@ export interface IConnection {
 export interface IConnectionDocument extends IConnection, Document {
     accept(): Promise<IConnectionDocument>;
     decline(): Promise<IConnectionDocument>;
+    cancel(): Promise<IConnectionDocument>;
 }
 
 // ─── Model ────────────────────────────────────────────────────────────────────
@@ -116,6 +117,11 @@ ConnectionSchema.methods.accept = async function (): Promise<IConnectionDocument
 
 ConnectionSchema.methods.decline = async function (): Promise<IConnectionDocument> {
     this.status = 'declined';
+    return this.save();
+};
+
+ConnectionSchema.methods.cancel = async function (): Promise<IConnectionDocument> {
+    this.status = 'cancelled';
     return this.save();
 };
 

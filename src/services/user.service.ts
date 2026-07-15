@@ -47,6 +47,11 @@ export const registerUser = async (input: RegisterUserInput) => {
         ...input,
         email: input.email.toLowerCase(),
         passwordHash,
+        roles: {
+            attendee: accountType === 'attendee',
+            organizer: accountType === 'organiser',
+        },
+        activeRole: accountType === 'organiser' ? 'organizer' : 'attendee',
     });
 
     if (accountType === 'attendee') {

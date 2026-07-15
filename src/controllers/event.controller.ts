@@ -18,8 +18,9 @@ export const getEvents = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getEventById = asyncHandler(async (req: Request, res: Response) => {
+    console.log("hereeeeee")
     const event = await eventService.getEventById(req.params.eventId);
-    (res as AppResponse).data({ event }, 'Event retrieved');
+    (res as AppResponse).data(event, 'Event retrieved');
 });
 
 export const updateEvent = asyncHandler(async (req: Request, res: Response) => {
@@ -32,7 +33,20 @@ export const publishEvent = asyncHandler(async (req: Request, res: Response) => 
     (res as AppResponse).data({ event }, 'Event published successfully');
 });
 
+
+
 export const getMyEvents = asyncHandler(async (req: Request, res: Response) => {
     const events = await eventService.getOrganiserEvents(req.user!.id);
-    (res as AppResponse).data({ events }, 'Your events retrieved');
+    (res as AppResponse).data({ data: events }, 'Your events retrieved');
 });
+
+export const getEventAttendees = asyncHandler(async (req: Request, res: Response) => {
+    const { eventId} = req.query;
+    console.log(req.query)
+    const attendees = eventId 
+    ? await eventService.getEventAttendeesHandler(eventId, req.query) 
+    : await eventService.getAllEventsAttendeesHandler(req.user!.id, req.query) ;
+    (res as AppResponse).data(attendees, 'Your attendees retrieved');
+});
+
+

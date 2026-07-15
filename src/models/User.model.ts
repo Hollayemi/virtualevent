@@ -4,6 +4,15 @@ import { Types } from 'mongoose';
 
 // ─── Interface ────────────────────────────────────────────────────────────────
 
+export interface INotificationPreferences {
+    connectionRequests: boolean;
+    messages: boolean;
+    meetingReminders: boolean;
+    marketingEmails: boolean;
+    eventUpdates: boolean;
+    systemAlerts: boolean;
+}
+
 export interface IUser {
     name: string;
     email: string;
@@ -16,6 +25,15 @@ export interface IUser {
     organiserProfile: Types.ObjectId; // Reference to Organiser profile
     vipProtectionEnabled: boolean;   // M2: when true, lower-tier users must spend credits to connect
     accountType: 'attendee' | 'organiser';
+    // settings.slice.ts — dual-role support ("switch on the other role later").
+    // `accountType` is kept for backward compatibility with existing JWT/authZ
+    // checks (requireAccountType) and now tracks the same value as `activeRole`.
+    roles: { attendee: boolean; organizer: boolean };
+    activeRole: 'attendee' | 'organizer';
+    notifications: INotificationPreferences;
+    preferredLanguage: string;
+    timezone: string;
+    deletionScheduledFor?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -68,6 +86,26 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
         bio: { type: String, maxlength: [500, 'Bio cannot exceed 500 characters'] },
         avatarUrl: { type: String },
         accountType: { type: String, enum: ['attendee', 'organiser'], default: 'attendee' },
+        roles: {
+            attendee: { type: Boolean, default: true },
+            organizer: { type: Boolean, default: false },
+        },
+        activeRole: {
+            type: String,
+            enum: ['attendee', 'organizer'],
+            default: 'attendee',
+        },
+        notifications: {
+            connectionRequests: { type: Boolean, default: true },
+            messages: { type: Boolean, default: true },
+            meetingReminders: { type: Boolean, default: true },
+            marketingEmails: { type: Boolean, default: false },
+            eventUpdates: { type: Boolean, default: true },
+            systemAlerts: { type: Boolean, default: true },
+        },
+        preferredLanguage: { type: String, default: 'en' },
+        timezone: { type: String, default: 'UTC' },
+        deletionScheduledFor: { type: Date, default: null },
     },
     {
         timestamps: true,

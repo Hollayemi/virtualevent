@@ -6,17 +6,10 @@ import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
-
 import connectDB from './config/database';
 import { env } from './config/env';
 import { swaggerSpec } from './config/swagger';
-import {
-    errorHandler,
-    handle404,
-    // jsonParseErrorHandler,
-    extendResponse,
-    AppResponse,
-} from './middleware/error';
+import {    errorHandler,    handle404,    extendResponse,    AppResponse,} from './middleware/error';
 
 // Routes
 import userRoutes from './routes/user.routes';
@@ -27,6 +20,9 @@ import registrationRoutes from './routes/registration.routes';
 import walletRoutes from './routes/wallet.routes';
 import creditPackageRoutes from './routes/creditPackage.routes';
 import creditConfigRoutes from './routes/creditConfig.routes';
+import discoverRoutes from './routes/discover.routes';
+import profileRoutes from './routes/profile.routes';
+import settingsRoutes from './routes/settings.routes';
 
 
 dotenv.config();
@@ -123,6 +119,12 @@ app.use('/api/v1/registrations', registrationRoutes);
 app.use('/api/v1/wallet', walletRoutes);
 app.use('/api/v1/credit-packages', creditPackageRoutes);
 app.use('/api/v1/credit-config', creditConfigRoutes);
+app.use('/api/v1/discover', discoverRoutes);
+app.use('/api/v1/profile', profileRoutes);
+app.use('/api/v1/settings', settingsRoutes);
+
+// Static avatar uploads — see middleware/upload.ts
+app.use('/uploads', express.static('uploads'));
 //  Error handling 
 
 app.use('*', handle404);

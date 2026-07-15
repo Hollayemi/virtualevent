@@ -21,29 +21,6 @@ router.get('/:eventId', ifToken, eventController.getEventById);
 
 //  Organiser-only Event Management 
 
-router.post(
-    '/',
-    protect,
-    requireAccountType('organiser'),
-    validate(createEventSchema),
-    eventController.createEvent,
-);
-
-router.patch(
-    '/:eventId',
-    protect,
-    requireAccountType('organiser'),
-    validate(updateEventSchema),
-    eventController.updateEvent,
-);
-
-router.patch(
-    '/:eventId/publish',
-    protect,
-    requireAccountType('organiser'),
-    eventController.publishEvent,
-);
-
 //  Registrations 
 
 // User registers for an event

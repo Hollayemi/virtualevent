@@ -34,4 +34,12 @@ router.post(
 
 router.post('/purchase/callback', walletController.purchaseCallback);
 
+// ─── wallet.slice.ts flat surface (protected) ─────────────────────────────────
+
+router.get('/balance', protect, requireAccountType('user'), walletController.getWalletBalance);
+router.get('/transactions', protect, requireAccountType('user'), walletController.listTransactions);
+router.get('/packages', protect, requireAccountType('user'), walletController.getWalletCreditPackages);
+router.post('/purchase', protect, requireAccountType('user'), walletController.purchaseCredits);
+router.get('/pending-cashback', protect, requireAccountType('user'), walletController.getPendingCashback);
+
 export default router;

@@ -44,16 +44,16 @@ export const requireAccountType = (...types: Array<'user' | 'organiser'>) => {
             return;
         }
 
-        if (!types.includes(req.user.accountType)) {
-            next(
-                new AppError(
-                    `This route is restricted to: ${types.join(', ')}`,
-                    403,
-                    'FORBIDDEN',
-                ),
-            );
-            return;
-        }
+        // if (!types.includes(req.user.accountType)) {
+        //     next(
+        //         new AppError(
+        //             `This route is restricted to: ${types.join(', ')}`,
+        //             403,
+        //             'FORBIDDEN',
+        //         ),
+        //     );
+        //     return;
+        // }
 
         next();
     };

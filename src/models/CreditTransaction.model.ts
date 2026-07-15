@@ -21,17 +21,36 @@ export const TRANSACTION_REFERENCE_MODELS = [
 
 export type TransactionReferenceModel = (typeof TRANSACTION_REFERENCE_MODELS)[number];
 
+// wallet.slice.ts `TransactionSource` — a more granular, product-facing
+// classification than `type`. Populated alongside `type` at write time
+// (see wallet.service.ts `writeTransaction`). `type` remains the source of
+// truth for direction (credit/debit); `source` is display metadata.
+export const TRANSACTION_SOURCES = [
+    'cashback',
+    'connection_request',
+    'connection_accept',
+    'meeting_booking',
+    'purchase',
+    'priority_message',
+    'refund',
+    'bonus',
+] as const;
+export type TransactionSource = (typeof TRANSACTION_SOURCES)[number];
+
 // ─── Interface ────────────────────────────────────────────────────────────────
 
 export interface ICreditTransaction {
     userId: Types.ObjectId;
     type: TransactionType;
+    source?: TransactionSource;              // frontend-facing classification
     amount: number;                          // always positive — direction implied by type
     balanceBefore: number;                   // wallet balance before this transaction
     balanceAfter: number;                    // wallet balance after this transaction
     description: string;                     // human-readable note
     referenceId?: string;                    // linked document ID for auditability
     referenceModel?: TransactionReferenceModel;
+    eventId?: Types.ObjectId;                // denormalized for wallet.slice ListTransactionsParams.eventId filter
+    eventName?: string;                      // denormalized for display (WalletTransaction.eventName)
     metadata?: Record<string, any>;          // flexible extra data
     createdAt: Date;
     // No updatedAt — this collection is append-only / immutable
@@ -58,6 +77,11 @@ const CreditTransactionSchema = new Schema<ICreditTransactionDocument, ICreditTr
             type: String,
             enum: TRANSACTION_TYPES,
             required: [true, 'Transaction type is required'],
+        },
+        source: {
+            type: String,
+            enum: TRANSACTION_SOURCES,
+            default: null,
         },
         amount: {
             type: Number,
@@ -87,6 +111,15 @@ const CreditTransactionSchema = new Schema<ICreditTransactionDocument, ICreditTr
         referenceModel: {
             type: String,
             enum: TRANSACTION_REFERENCE_MODELS,
+            default: null,
+        },
+        eventId: {
+            type: Schema.Types.ObjectId,
+            ref: 'Event',
+            default: null,
+        },
+        eventName: {
+            type: String,
             default: null,
         },
         metadata: {

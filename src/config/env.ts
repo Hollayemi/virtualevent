@@ -21,6 +21,7 @@ export const env = {
     JWT_REFRESH_SECRET: getEnv('JWT_REFRESH_SECRET', 'fallback-refresh-secret'),
     JWT_REFRESH_EXPIRE: getEnv('JWT_REFRESH_EXPIRE', '30d'),
     CLIENT_URL: getEnv('CLIENT_URL', 'http://localhost:3000'),
+    SERVER_URL: getEnv('SERVER_URL', 'http://localhost:5000'),
     isDev: () => process.env.NODE_ENV === 'development',
     isProd: () => process.env.NODE_ENV === 'production',
 };
